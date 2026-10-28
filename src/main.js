@@ -20,10 +20,14 @@ const unlockAudioOnUserGesture = () => {
 });
 
 // Inicjalizacja aplikacji po załadowaniu DOM
-function initApp() {
-  if (!window.app) {
-    window.app = new SurfWorkoutApp(WORKOUT_SESSIONS);
+let appInstance = null;
+export function initApp() {
+  if (!appInstance) {
+    appInstance = new SurfWorkoutApp(WORKOUT_SESSIONS);
+    window.surfApp = appInstance;
+    window.app = appInstance;
   }
+  return appInstance;
 }
 
 if (document.readyState === 'loading') {
