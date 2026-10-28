@@ -1,13 +1,193 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>static_web_service_template</title>
-  </head>
-  <body>
-    <div id="app"></div>
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Surf Workout - Trening Przygotowawczy</title>
+  <meta name="theme-color" content="#090d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+  <div id="app" class="app-container">
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <button id="btn-open-list" class="icon-btn" aria-label="Menu sesji i ćwiczeń">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          <span id="header-progress-text">Sesja A • 1 / 9</span>
+        </button>
+      </div>
+
+      <div class="top-bar-center">
+        <div class="total-time-badge">
+          <span class="label">CZAS:</span>
+          <span id="total-time-display">00:00</span>
+        </div>
+      </div>
+
+      <div class="top-bar-right">
+        <button id="btn-sound" class="icon-btn" title="Dźwięk">
+          <svg id="icon-sound-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+          <svg id="icon-sound-off" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Workout Main View -->
+    <main class="main-content" id="main-view">
+      <!-- Session Name Banner & Metadata -->
+      <div class="session-title-row">
+        <span id="session-tag" class="session-tag">SESJA A</span>
+        <span id="session-desc-text" class="session-desc-text">Pop-up, złączone nogi i otwarta klatka</span>
+      </div>
+
+      <div class="meta-row">
+        <span id="category-badge" class="badge">KATEGORIA</span>
+        <span id="equipment-badge" class="badge badge-outline">SPRZĘT</span>
+      </div>
+
+      <!-- Exercise Title -->
+      <h1 id="exercise-name" class="exercise-title">Prone hold z klockiem</h1>
+
+      <!-- Set Indicator Dots -->
+      <div class="sets-tracker">
+        <span class="sets-label" id="sets-counter-text">SERIA 1 Z 4</span>
+        <div id="sets-dots" class="sets-dots-container"></div>
+      </div>
+
+      <!-- Primary Timer / Reps Card -->
+      <div class="display-card phase-ready" id="display-card">
+        <div class="phase-banner" id="phase-banner">PRZYGOTUJ SIĘ</div>
+        
+        <div class="timer-center-wrap">
+          <!-- Big Digits -->
+          <div id="main-digits" class="main-digits font-mono">00:40</div>
+          <div id="secondary-digits" class="secondary-info">ZADANIE CZASOWE</div>
+        </div>
+
+        <!-- Linear Progress Bar -->
+        <div class="progress-bar-bg">
+          <div id="phase-progress-bar" class="progress-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- Up Next Card (only visible during REST) -->
+      <div id="next-exercise-card" class="next-exercise-card hidden">
+        <span class="next-tag">NASTĘPNIE:</span>
+        <span id="next-exercise-name" class="next-title">2-Step Pop-up Drill</span>
+        <span id="next-exercise-meta" class="next-meta">3 serie × 8 powt.</span>
+      </div>
+
+      <!-- Key Cue Box -->
+      <div class="cue-container" id="cue-container">
+        <div class="cue-header">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>KLUCZOWA WSKAZÓWKA TECHNICZNA</span>
+        </div>
+        <p id="cue-text" class="cue-text">Klocek zaciśnięty między kostkami. Kolana 2–3 cm nad matą. Dłonie przy dolnych żebrach.</p>
+        <ul id="cue-points" class="cue-points"></ul>
+      </div>
+    </main>
+
+    <!-- Workout Complete View (Hidden initially) -->
+    <section class="complete-view hidden" id="complete-view">
+      <div class="complete-card">
+        <div class="complete-icon">🎉</div>
+        <h2 class="complete-title">TRENING UKOŃCZONY</h2>
+        <p class="complete-subtitle" id="complete-session-subtitle">Sesja A zrealizowana zgodnie z planem.</p>
+        
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span class="stat-value" id="final-total-time">00:00</span>
+            <span class="stat-name">Łączny czas</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value" id="final-total-sets">31</span>
+            <span class="stat-name">Ukończone serie</span>
+          </div>
+        </div>
+
+        <button id="btn-restart-workout" class="btn btn-primary btn-large">
+          ZACZNIJ OD NOWA
+        </button>
+      </div>
+    </section>
+
+    <!-- Bottom Controls Area -->
+    <footer class="bottom-controls">
+      <!-- Main Action Button -->
+      <button id="btn-main-action" class="btn btn-primary btn-giant btn-pulse">
+        <span id="btn-main-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        </span>
+        <span id="btn-main-text">ROZPOCZNIJ SERIĘ</span>
+      </button>
+
+      <!-- Secondary Controls Row -->
+      <div class="secondary-controls">
+        <button id="btn-prev-set" class="btn btn-secondary" title="Poprzednia seria">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          <span>WSTECZ</span>
+        </button>
+
+        <button id="btn-pause-toggle" class="btn btn-secondary" title="Pauza / Wznów">
+          <svg id="icon-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+          <svg id="icon-resume" class="hidden" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <span id="pause-btn-text">PAUZA</span>
+        </button>
+
+        <button id="btn-reset-set" class="btn btn-secondary" title="Resetuj bieżącą serię">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+          <span>RESET</span>
+        </button>
+
+        <button id="btn-skip-set" class="btn btn-secondary" title="Pomiń serię / Przejdź dalej">
+          <span>DALEJ</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+    </footer>
+
+    <!-- Exercises & Sessions Drawer (Hamburger Menu po lewej stronie) -->
+    <div id="drawer-backdrop" class="drawer-backdrop hidden"></div>
+    <aside id="exercises-drawer" class="exercises-drawer hidden">
+      <div class="drawer-header">
+        <div>
+          <h3 class="drawer-title">MENU TRENINGU</h3>
+          <span id="drawer-subtitle" class="drawer-subtitle">Wybierz sesję lub ćwiczenie</span>
+        </div>
+        <button id="btn-close-drawer" class="icon-btn" aria-label="Zamknij menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Wybór sesji w menu hamburgera -->
+        <div class="drawer-section">
+          <div class="drawer-section-header">
+            <span class="drawer-section-title">SESJA TRENINGOWA</span>
+            <span class="drawer-section-count" id="drawer-total-sessions-badge">3 SESJE</span>
+          </div>
+          <div id="drawer-session-list" class="drawer-session-list"></div>
+        </div>
+
+        <!-- Lista ćwiczeń dla aktywnej sesji -->
+        <div class="drawer-section">
+          <div class="drawer-section-header">
+            <span class="drawer-section-title">ĆWICZENIA W SESJI</span>
+            <span class="drawer-section-count" id="drawer-session-ex-count">9 ĆWICZEŃ</span>
+          </div>
+          <div id="drawer-exercise-list" class="drawer-list"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
     <script type="module" src="/src/main.js"></script>
-  </body>
+</body>
 </html>

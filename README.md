@@ -1,55 +1,37 @@
-# static_web_service_template
+# Surf Workout
 
-This repository is meant to be forked and used as base for creating static webpage with no backend meant to be hosted on github pages or other similar environment.
+Aplikacja treningowa przygotowująca ciało do surfingu (pop-up drills, prone holds, otwieranie klatki, mobilność bioder i stawu skokowego).
 
-## Getting Started
+## Funkcjonalności
 
-### Prerequisites
+- **3 sesje treningowe**:
+  - **Sesja A**: Pop-up, Złączone Nogi & Otwarta Klatka
+  - **Sesja B**: Anti-Rotation, Wiosłowanie & Mobilność Kostek
+  - **Sesja C**: Wytrzymałość Wiosłowania & Eksplozywny Pop-up
+- **Precyzyjny timer**: 10-sekundowe odliczanie przygotowawcze, przejścia serii, czas pracy i przerw.
+- **Dźwięki Web Audio**: Naturalne sygnały dźwiękowe z pełną obsługą iOS Safari (omijanie sprzętowego trybu cichego).
+- **Interfejs mobilny**: Płynne menu boczne (drawer), widok ukończenia treningu, obsługa blokady wygaszania ekranu (Screen Wake Lock API).
 
-- Node.js (v18 or higher recommended)
+## Rozwój lokalny
+
+Wymagania:
+- Node.js (wersja 20+ lub 22+)
 - npm
 
-### Installation
-
 ```bash
+# Instalacja zależności
 npm install
-```
 
-### Development
-
-Start the development server with hot reload:
-
-```bash
+# Uruchomienie serwera deweloperskiego
 npm run dev
-```
 
-The site will be available at `http://localhost:5173`
-
-### Build
-
-Build for production:
-
-```bash
+# Kompilacja produkcyjna
 npm run build
-```
 
-The built files will be in the `dist` directory.
-
-### Preview
-
-Preview the production build:
-
-```bash
+# Podgląd wersji produkcyjnej
 npm run preview
 ```
 
-## Project Structure
+## Wdrożenie
 
-```
-├── index.html      # Entry HTML file
-├── public/         # Static assets
-├── src/
-│   ├── main.js     # Main JavaScript entry
-│   └── style.css   # Styles
-└── package.json    # Project configuration
-```
+Projekt wykorzystuje szablon `static_web_service_template`. Każdy push do gałęzi `main` automatycznie buduje aplikację i publikuje ją na GitHub Pages za pośrednictwem GitHub Actions (`.github/workflows/deploy-main.yml`).
