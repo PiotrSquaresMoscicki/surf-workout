@@ -14,12 +14,17 @@ test.describe('Surf Workout UI & Timer Tests', () => {
   test('powinien poprawnie zainicjalizować stan początkowy aplikacji', async ({ page }) => {
     await expect(page).toHaveTitle(/Surf Workout/);
     await expect(page.locator('#header-progress-text')).toHaveText(/Sesja A • 1 \/ 9/);
+    await expect(page.locator('#app-version')).toBeVisible();
+    await expect(page.locator('#app-version')).toHaveText(/^v\d+\.\d+\.\d+/);
     await expect(page.locator('#session-tag')).toHaveText('SESJA A');
     await expect(page.locator('#exercise-name')).toHaveText('Prone hold z klockiem');
     await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 4');
     await expect(page.locator('#phase-banner')).toHaveText('PRZYGOTUJ SIĘ');
     await expect(page.locator('#main-digits')).toHaveText('00:40');
     await expect(page.locator('#btn-main-text')).toHaveText('ROZPOCZNIJ SERIĘ');
+
+    const appVersion = await page.evaluate(() => window.APP_VERSION);
+    expect(appVersion).toMatch(/^v\d+\.\d+\.\d+/);
   });
 
   test('powinien reagować na kliknięcie głównego przycisku i przechodzić z fazy READY do WORK', async ({ page }) => {

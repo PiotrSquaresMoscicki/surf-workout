@@ -77,7 +77,8 @@ export class SurfWorkoutApp {
       drawerTotalSessionsBadge: document.getElementById('drawer-total-sessions-badge'),
       drawerSessionExCount: document.getElementById('drawer-session-ex-count'),
       drawerExerciseList: document.getElementById('drawer-exercise-list'),
-      btnRestartWorkout: document.getElementById('btn-restart-workout')
+      btnRestartWorkout: document.getElementById('btn-restart-workout'),
+      appVersion: document.getElementById('app-version')
     };
 
     this.init();
@@ -89,12 +90,21 @@ export class SurfWorkoutApp {
   }
 
   init() {
+    this.updateAppVersion();
     this.bindEvents();
     this.updateSessionHeader();
     this.renderDrawerSessions();
     this.renderDrawerExercises();
     this.loadExercise(0, 0);
     this.requestWakeLock();
+  }
+
+  updateAppVersion() {
+    const version = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : (this.dom.appVersion?.textContent || 'v1.0.1');
+    window.APP_VERSION = version;
+    if (this.dom.appVersion) {
+      this.dom.appVersion.textContent = version;
+    }
   }
 
   // Przełączanie sesji treningowej (wybierane z menu hamburgera / drawer)
