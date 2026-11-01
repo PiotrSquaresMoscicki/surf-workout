@@ -13,14 +13,14 @@ test.describe('Surf Workout UI & Timer Tests', () => {
 
   test('powinien poprawnie zainicjalizować stan początkowy aplikacji', async ({ page }) => {
     await expect(page).toHaveTitle(/Surf Workout/);
-    await expect(page.locator('#header-progress-text')).toHaveText(/Sesja A • 1 \/ 9/);
+    await expect(page.locator('#header-progress-text')).toHaveText(/Wariant 1 • 1 \/ 10/);
     await expect(page.locator('#app-version')).toBeVisible();
     await expect(page.locator('#app-version')).toHaveText(/^v\d+\.\d+\.\d+/);
-    await expect(page.locator('#session-tag')).toHaveText('SESJA A');
-    await expect(page.locator('#exercise-name')).toHaveText('Prone hold z klockiem');
-    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 4');
+    await expect(page.locator('#session-tag')).toHaveText('WARIANT 1');
+    await expect(page.locator('#exercise-name')).toHaveText('Rozciąganie wstępne');
+    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 1');
     await expect(page.locator('#phase-banner')).toHaveText('PRZYGOTUJ SIĘ');
-    await expect(page.locator('#main-digits')).toHaveText('00:40');
+    await expect(page.locator('#main-digits')).toHaveText('10:00');
     await expect(page.locator('#btn-main-text')).toHaveText('ROZPOCZNIJ SERIĘ');
 
     const appVersion = await page.evaluate(() => window.APP_VERSION);
@@ -57,26 +57,28 @@ test.describe('Surf Workout UI & Timer Tests', () => {
     await expect(page.locator('#btn-main-text')).toHaveText(/ZAKOŃCZ PRZERWĘ/);
     await expect(page.locator('#next-exercise-card')).not.toHaveClass(/hidden/);
 
-    // Kliknięcie "Zakończ przerwę" -> natychmiastowe przejście do kolejnej serii (WORK)
+    // Kliknięcie "Zakończ przerwę" -> natychmiastowe przejście do kolejnego ćwiczenia/serii (WORK)
     await mainBtn.click();
     await expect(page.locator('#phase-banner')).toHaveText('PRACA');
-    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 2 Z 4');
+    await expect(page.locator('#exercise-name')).toHaveText('Pompki wąskie w futrynie drzwi');
+    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 3');
   });
 
   test('powinien obsługiwać przyciski DALEJ oraz WSTECZ do przełączania serii', async ({ page }) => {
-    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 4');
+    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 1');
 
-    // Kliknięcie DALEJ
+    // Kliknięcie DALEJ (przechodzi do drugiego ćwiczenia, seria 1)
     await page.locator('#btn-skip-set').click();
-    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 2 Z 4');
+    await expect(page.locator('#exercise-name')).toHaveText('Pompki wąskie w futrynie drzwi');
+    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 3');
 
-    // Kolejne kliknięcie DALEJ
+    // Kolejne kliknięcie DALEJ (seria 2 drugiego ćwiczenia)
     await page.locator('#btn-skip-set').click();
-    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 3 Z 4');
+    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 2 Z 3');
 
     // Kliknięcie WSTECZ
     await page.locator('#btn-prev-set').click();
-    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 2 Z 4');
+    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 3');
   });
 
   test('powinien obsługiwać przycisk PAUZA / WZNÓW w trakcie trwania serii', async ({ page }) => {
@@ -101,7 +103,7 @@ test.describe('Surf Workout UI & Timer Tests', () => {
     expect(isResumed).toBe(false);
   });
 
-  test('powinien otwierać drawer menu i pozwalać na zmianę sesji treningowej na Sesję B', async ({ page }) => {
+  test('powinien otwierać drawer menu i pozwalać na zmianę sesji treningowej na Wariant 2', async ({ page }) => {
     const drawer = page.locator('#exercises-drawer');
     await expect(drawer).toHaveClass(/hidden/);
 
@@ -113,17 +115,17 @@ test.describe('Surf Workout UI & Timer Tests', () => {
     const sessionCards = page.locator('.drawer-session-card');
     await expect(sessionCards).toHaveCount(3);
 
-    // Wybór Sesji B (indeks 1)
+    // Wybór Wariantu 2 (indeks 1)
     await sessionCards.nth(1).click();
 
     // Zamknięcie drawera przyciskiem zamknięcia
     await page.locator('#btn-close-drawer').click();
 
-    // Drawer powinien być zamknięty, a nagłówek i tag zaktualizowany na Sesję B
+    // Drawer powinien być zamknięty, a nagłówek i tag zaktualizowany na Wariant 2
     await expect(drawer).toHaveClass(/hidden/);
-    await expect(page.locator('#header-progress-text')).toHaveText(/Sesja B • 1 \//);
-    await expect(page.locator('#session-tag')).toHaveText('SESJA B');
-    await expect(page.locator('#exercise-name')).not.toHaveText('Prone hold z klockiem');
+    await expect(page.locator('#header-progress-text')).toHaveText(/Wariant 2 • 1 \/ 11/);
+    await expect(page.locator('#session-tag')).toHaveText('WARIANT 2');
+    await expect(page.locator('#exercise-name')).toHaveText('Rozciąganie wstępne');
   });
 
   test('powinien prawidłowo przełączać wyciszenie dźwięku', async ({ page }) => {
@@ -154,8 +156,9 @@ test.describe('Surf Workout UI & Timer Tests', () => {
     await page.keyboard.press('Space');
     await expect(page.locator('#phase-banner')).toHaveText('PRACA');
 
-    // Wciśnięcie strzałki w prawo przechodzi do kolejnej serii
+    // Wciśnięcie strzałki w prawo przechodzi do kolejnej serii (drugie ćwiczenie, seria 1)
     await page.keyboard.press('ArrowRight');
-    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 2 Z 4');
+    await expect(page.locator('#exercise-name')).toHaveText('Pompki wąskie w futrynie drzwi');
+    await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 3');
   });
 });
