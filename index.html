@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="/surf-workout/favicon.svg">
-  <script type="module" crossorigin src="/surf-workout/assets/index-CgfatdwD.js"></script>
+  <script type="module" crossorigin src="/surf-workout/assets/index-G2ySPjW8.js"></script>
   <link rel="stylesheet" crossorigin href="/surf-workout/assets/index-CTEVhixG.css">
 </head>
 <body>
@@ -33,7 +33,7 @@
       </div>
 
       <div class="top-bar-right">
-        <span id="app-version" class="version-badge" title="Wersja aplikacji">v1.0.4</span>
+        <span id="app-version" class="version-badge" title="Wersja aplikacji">v1.0.5</span>
         <button id="btn-sound" class="icon-btn icon-btn-compact" title="Dźwięk">
           <svg id="icon-sound-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
           <svg id="icon-sound-off" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
@@ -179,13 +179,14 @@
           <div class="drawer-volume-box">
             <div class="volume-slider-row">
               <span class="volume-slider-icon">🔈</span>
-              <input type="range" id="volume-slider" min="0" max="100" value="100" step="5" class="volume-slider" aria-label="Głośność dźwięków">
+              <input type="range" id="volume-slider" min="0" max="300" value="100" step="10" class="volume-slider" aria-label="Głośność dźwięków">
               <span class="volume-slider-icon">🔊</span>
             </div>
             <div class="volume-presets-row">
-              <button type="button" class="btn-preset" data-val="30">30%</button>
-              <button type="button" class="btn-preset" data-val="60">60%</button>
+              <button type="button" class="btn-preset" data-val="50">50%</button>
               <button type="button" class="btn-preset active" data-val="100">100%</button>
+              <button type="button" class="btn-preset" data-val="200">200%</button>
+              <button type="button" class="btn-preset" data-val="300">300%</button>
               <button type="button" id="btn-test-sound" class="btn-test-sound">Przetestuj dźwięk</button>
             </div>
           </div>
