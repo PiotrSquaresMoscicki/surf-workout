@@ -200,22 +200,26 @@ export class SurfWorkoutApp {
 
     if (this.dom.quickVolumeSlider) {
       this.dom.quickVolumeSlider.addEventListener('input', (e) => {
+        window.workoutAudio.unlock();
         const val = parseInt(e.target.value, 10);
         window.workoutAudio.setVolume(val / 100);
         this.updateVolumeUI();
       });
       this.dom.quickVolumeSlider.addEventListener('change', () => {
+        window.workoutAudio.unlock();
         window.workoutAudio.playTick(1);
       });
     }
 
     if (this.dom.drawerVolumeSlider) {
       this.dom.drawerVolumeSlider.addEventListener('input', (e) => {
+        window.workoutAudio.unlock();
         const val = parseInt(e.target.value, 10);
         window.workoutAudio.setVolume(val / 100);
         this.updateVolumeUI();
       });
       this.dom.drawerVolumeSlider.addEventListener('change', () => {
+        window.workoutAudio.unlock();
         window.workoutAudio.playTick(1);
       });
     }
@@ -224,6 +228,7 @@ export class SurfWorkoutApp {
     document.querySelectorAll('.btn-quick-preset, .btn-vol-preset').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
+        window.workoutAudio.unlock();
         const pVol = parseInt(btn.dataset.vol, 10);
         if (!isNaN(pVol)) {
           window.workoutAudio.setVolume(pVol / 100);
@@ -233,8 +238,23 @@ export class SurfWorkoutApp {
       });
     });
 
+    // Przełączanie trybu audio (Bypass vs Spotify)
+    document.querySelectorAll('.btn-audio-mode, .btn-audio-mode-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        window.workoutAudio.unlock();
+        const mode = btn.dataset.mode;
+        if (mode) {
+          window.workoutAudio.setAudioMode(mode);
+          this.updateVolumeUI();
+          window.workoutAudio.playTick(1);
+        }
+      });
+    });
+
     if (this.dom.btnDrawerTestSound) {
       this.dom.btnDrawerTestSound.addEventListener('click', () => {
+        window.workoutAudio.unlock();
         window.workoutAudio.playTestSound();
       });
     }
@@ -805,6 +825,11 @@ export class SurfWorkoutApp {
     document.querySelectorAll('.btn-vol-preset').forEach(btn => {
       const pVol = parseInt(btn.dataset.vol, 10);
       btn.classList.toggle('active', !isMuted && pVol === volPct);
+    });
+
+    const activeMode = window.workoutAudio.audioMode;
+    document.querySelectorAll('.btn-audio-mode, .btn-audio-mode-toggle').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === activeMode);
     });
   }
 

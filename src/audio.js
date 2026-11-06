@@ -1,11 +1,16 @@
-// Moduł audio bazujący na Web Audio API z pełnym wsparciem dla tła muzycznego (Spotify / Apple Music)
-// oraz dynamiczną kontrolą głośności (Master GainNode)
+// Moduł audio bazujący na Web Audio API z pełnym wsparciem dla iOS Safari (w tym iPhone Silent Mode bypass)
+// oraz trybem współbieżności ze Spotify (Ambient Mix)
 
 export class WorkoutAudio {
   constructor() {
     this.ctx = null;
     this.masterGainNode = null;
     this.isMuted = localStorage.getItem('surf_workout_muted') === 'true';
+
+    // Tryb audio:
+    // 'bypass' - domyślny, kategoria 'playback' + HTML5 media unlock (omija sprzętowy przełącznik Silent Mode na iPhonie)
+    // 'spotify' - kategoria 'ambient', miksuje się ze Spotify bez pauzowania muzyki (wymaga wyłączonego wyciszenia na iPhonie lub słuchawek)
+    this.audioMode = localStorage.getItem('surf_workout_audio_mode') || 'bypass';
 
     // Domyślna głośność: 0.8 (80%), zakres 0.0 - 1.0
     const savedVol = localStorage.getItem('surf_workout_volume');
@@ -16,13 +21,21 @@ export class WorkoutAudio {
     this.setupAudioSession();
   }
 
-  // Kategoria 'ambient' na iOS Safari / W3C Audio Session API
-  // Pozwala na jednoczesne odtwarzanie dźwięków treningu wraz z muzyką w tle (np. Spotify)
-  // bez przerywania, pauzowania czy wywłaszczania sesji odtwarzacza muzyki
+  setAudioMode(mode) {
+    if (mode !== 'bypass' && mode !== 'spotify') return;
+    this.audioMode = mode;
+    localStorage.setItem('surf_workout_audio_mode', mode);
+    this.setupAudioSession();
+    if (mode === 'bypass') {
+      this.forceMediaPlaybackUnlock();
+    }
+    return this.audioMode;
+  }
+
   setupAudioSession() {
     if ('audioSession' in navigator) {
       try {
-        navigator.audioSession.type = 'ambient';
+        navigator.audioSession.type = this.audioMode === 'spotify' ? 'ambient' : 'playback';
       } catch (e) {
         console.warn('audioSession error:', e);
       }
@@ -52,10 +65,21 @@ export class WorkoutAudio {
     }
   }
 
+  // Wymuszenie odblokowania kanału playback na iOS (omija sprzętowy przełącznik wyciszenia)
+  forceMediaPlaybackUnlock() {
+    try {
+      const dummyAudio = document.createElement('audio');
+      dummyAudio.setAttribute('playsinline', '');
+      dummyAudio.setAttribute('x-webkit-airplay', 'deny');
+      dummyAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+      dummyAudio.play().catch(() => {});
+    } catch (_) {}
+  }
+
   // Odblokowanie kontekstu audio na urządzeniach mobilnych przy geście użytkownika
   unlock() {
     this.init();
-    if (!this.ctx || this.isUnlocked) return;
+    if (!this.ctx) return;
 
     try {
       if (this.ctx.state === 'suspended') {
@@ -69,6 +93,10 @@ export class WorkoutAudio {
       source.connect(this.masterGainNode || this.ctx.destination);
       source.start(0);
 
+      if (this.audioMode === 'bypass') {
+        this.forceMediaPlaybackUnlock();
+      }
+
       this.isUnlocked = true;
     } catch (e) {
       console.warn('Audio unlock warning:', e);
@@ -78,9 +106,12 @@ export class WorkoutAudio {
   applyVolume() {
     if (!this.masterGainNode || !this.ctx) return;
     const effectiveGain = this.isMuted ? 0 : this.volume;
-    const t = this.ctx.currentTime;
-    this.masterGainNode.gain.cancelScheduledValues(t);
-    this.masterGainNode.gain.setValueAtTime(effectiveGain, t);
+    try {
+      const t = this.ctx.currentTime;
+      this.masterGainNode.gain.cancelScheduledValues(t);
+      this.masterGainNode.gain.setValueAtTime(effectiveGain, t);
+    } catch (_) {}
+    this.masterGainNode.gain.value = effectiveGain;
   }
 
   // Ustawienie głośności (wartość 0.0 - 1.0)
@@ -122,10 +153,9 @@ export class WorkoutAudio {
   }
 
   // Spokojny, organiczny, ale czytelny i wyrazisty tik odliczania (10s do 1s)
-  // Wyrazisty atak i odpowiednia dynamika, aby dźwięk był świetnie słyszalny przez muzykę ze Spotify
   playTick(secondsRemaining = 10) {
     if (this.isMuted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     try {
@@ -165,7 +195,7 @@ export class WorkoutAudio {
   // Ciepły, promienny dzwonek startu serii (akord F5 + A5 + C6)
   playStart() {
     if (this.isMuted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     try {
@@ -208,7 +238,7 @@ export class WorkoutAudio {
   // Dźwięk końca serii / gong relaksacyjny (misa tybetańska z pełnym ciałem harmonicznym)
   playEndGong() {
     if (this.isMuted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     try {
@@ -252,7 +282,7 @@ export class WorkoutAudio {
   // Spokojny ton wejścia w przerwę (łagodny dwuton C5 -> A4)
   playRest() {
     if (this.isMuted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     try {
@@ -295,7 +325,7 @@ export class WorkoutAudio {
   // Dźwięk zakończenia czasu przerwy (dwustopniowy dzwonek D5 -> A5)
   playRestEnd() {
     if (this.isMuted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     try {
@@ -338,7 +368,7 @@ export class WorkoutAudio {
   // Subtelne kliknięcie interfejsu
   playClick() {
     if (this.isMuted) return;
-    this.init();
+    this.unlock();
     if (!this.ctx) return;
 
     try {
@@ -372,7 +402,7 @@ export class WorkoutAudio {
 
   // Dźwięk testowy dla użytkownika do szybkiego sprawdzenia głośności
   playTestSound() {
-    this.init();
+    this.unlock();
     this.playTick(1);
     setTimeout(() => {
       this.playStart();

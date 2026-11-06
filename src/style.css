@@ -1107,3 +1107,101 @@ body {
   color: var(--color-accent);
   margin-top: 2px;
 }
+
+/* Audio Mode Controls */
+.audio-mode-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+
+.audio-mode-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.audio-mode-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-audio-mode {
+  flex: 1;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.btn-audio-mode.active {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.drawer-audio-mode-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 10px;
+}
+
+.drawer-mode-title {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.6px;
+}
+
+.audio-mode-toggle-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.btn-audio-mode-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.btn-audio-mode-toggle.active {
+  background: rgba(0, 240, 255, 0.12);
+  border-color: var(--color-accent);
+}
+
+.mode-btn-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.btn-audio-mode-toggle.active .mode-btn-title {
+  color: var(--color-accent);
+}
+
+.mode-btn-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}

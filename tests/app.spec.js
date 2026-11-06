@@ -218,13 +218,34 @@ test.describe('Surf Workout UI & Timer Tests', () => {
     await expect(popover).toHaveClass(/hidden/);
   });
 
-  test('powinien ustawić konfigurację audioSession na ambient dla miksowania ze Spotify', async ({ page }) => {
+  test('powinien obsługiwać przełączanie trybu audio między głośnym (bypass) a miksowaniem ze Spotify', async ({ page }) => {
+    // Domyślny tryb to bypass (playback)
+    const initialMode = await page.evaluate(() => window.workoutAudio.audioMode);
+    expect(initialMode).toBe('bypass');
+
+    // Otwarcie drawera
+    await page.locator('#btn-open-list').click();
+    const spotifyBtn = page.locator('.btn-audio-mode-toggle[data-mode="spotify"]');
+    await spotifyBtn.click();
+
+    // Weryfikacja zmiany trybu na spotify (ambient)
+    const newMode = await page.evaluate(() => window.workoutAudio.audioMode);
+    expect(newMode).toBe('spotify');
+    const savedMode = await page.evaluate(() => localStorage.getItem('surf_workout_audio_mode'));
+    expect(savedMode).toBe('spotify');
+
     const isAmbient = await page.evaluate(() => {
       if ('audioSession' in navigator) {
         return navigator.audioSession.type === 'ambient';
       }
-      return true; // bezpieczny fallback w przeglądarkach bez navigator.audioSession
+      return true;
     });
     expect(isAmbient).toBe(true);
+
+    // Przełączenie z powrotem na tryb bypass
+    const bypassBtn = page.locator('.btn-audio-mode-toggle[data-mode="bypass"]');
+    await bypassBtn.click();
+    const finalMode = await page.evaluate(() => window.workoutAudio.audioMode);
+    expect(finalMode).toBe('bypass');
   });
 });
