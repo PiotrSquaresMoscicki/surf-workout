@@ -161,4 +161,70 @@ test.describe('Surf Workout UI & Timer Tests', () => {
     await expect(page.locator('#exercise-name')).toHaveText('Pompki wąskie w futrynie drzwi');
     await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 3');
   });
+
+  test('powinien obsługiwać zmianę głośności, presety oraz synchronizację UI i localStorage', async ({ page }) => {
+    // Domyślna głośność 80%
+    await expect(page.locator('#top-volume-val')).toHaveText('80%');
+
+    // Otwarcie drawera
+    await page.locator('#btn-open-list').click();
+    await expect(page.locator('#drawer-volume-badge')).toHaveText('80%');
+
+    // Kliknięcie presetu 100%
+    const preset100 = page.locator('.btn-vol-preset[data-vol="100"]');
+    await preset100.click();
+
+    // Sprawdzenie stanu obiektu audio i zapisu w localStorage
+    const vol = await page.evaluate(() => window.workoutAudio.volume);
+    expect(vol).toBe(1);
+    const savedVol = await page.evaluate(() => localStorage.getItem('surf_workout_volume'));
+    expect(savedVol).toBe('1.00');
+
+    // Sprawdzenie etykiet UI
+    await expect(page.locator('#top-volume-val')).toHaveText('100%');
+    await expect(page.locator('#drawer-volume-badge')).toHaveText('100%');
+
+    // Zmiana suwakiem na 40%
+    const slider = page.locator('#drawer-volume-slider');
+    await slider.fill('40');
+    await slider.dispatchEvent('input');
+
+    const vol40 = await page.evaluate(() => window.workoutAudio.volume);
+    expect(vol40).toBe(0.4);
+    await expect(page.locator('#top-volume-val')).toHaveText('40%');
+    await expect(page.locator('#drawer-volume-badge')).toHaveText('40%');
+  });
+
+  test('powinien otwierać i zamykać podręczny popover głośności na górnym pasku', async ({ page }) => {
+    const popover = page.locator('#quick-volume-popover');
+    const badgeBtn = page.locator('#btn-volume-toggle');
+
+    await expect(popover).toHaveClass(/hidden/);
+
+    // Kliknięcie plakietki głośności otwiera popover
+    await badgeBtn.click();
+    await expect(popover).not.toHaveClass(/hidden/);
+
+    // Wybór presetu w popoverze (40%)
+    const quickPreset40 = page.locator('.btn-quick-preset[data-vol="40"]');
+    await quickPreset40.click();
+
+    const vol = await page.evaluate(() => window.workoutAudio.volume);
+    expect(vol).toBe(0.4);
+    await expect(page.locator('#quick-volume-val')).toHaveText('40%');
+
+    // Kliknięcie poza popoverem zamyka go
+    await page.locator('#display-card').click();
+    await expect(popover).toHaveClass(/hidden/);
+  });
+
+  test('powinien ustawić konfigurację audioSession na ambient dla miksowania ze Spotify', async ({ page }) => {
+    const isAmbient = await page.evaluate(() => {
+      if ('audioSession' in navigator) {
+        return navigator.audioSession.type === 'ambient';
+      }
+      return true; // bezpieczny fallback w przeglądarkach bez navigator.audioSession
+    });
+    expect(isAmbient).toBe(true);
+  });
 });

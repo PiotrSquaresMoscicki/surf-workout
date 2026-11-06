@@ -31,11 +31,33 @@
       </div>
 
       <div class="top-bar-right">
-        <span id="app-version" class="version-badge" title="Wersja aplikacji">v1.0.1</span>
-        <button id="btn-sound" class="icon-btn icon-btn-compact" title="Dźwięk">
-          <svg id="icon-sound-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-          <svg id="icon-sound-off" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
-        </button>
+        <span id="app-version" class="version-badge" title="Wersja aplikacji">v1.0.2</span>
+        <div class="sound-control-group">
+          <button id="btn-sound" class="icon-btn icon-btn-compact" title="Dźwięk" aria-label="Wycisz lub włącz dźwięk">
+            <svg id="icon-sound-on" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            <svg id="icon-sound-off" class="hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+          </button>
+          <button id="btn-volume-toggle" class="volume-badge-btn" title="Głośność dźwięków" aria-label="Zmień głośność dźwięków">
+            <span id="top-volume-val">80%</span>
+          </button>
+          <div id="quick-volume-popover" class="quick-volume-popover hidden">
+            <div class="popover-arrow"></div>
+            <div class="quick-volume-header">
+              <span class="quick-volume-title">GŁOŚNOŚĆ DŹWIĘKÓW</span>
+              <span id="quick-volume-val" class="quick-volume-val">80%</span>
+            </div>
+            <div class="quick-volume-slider-row">
+              <span class="vol-icon">🔈</span>
+              <input type="range" id="quick-volume-slider" min="0" max="100" value="80" step="5" class="volume-range-input" aria-label="Suwak głośności dźwięków">
+              <span class="vol-icon">🔊</span>
+            </div>
+            <div class="quick-volume-presets">
+              <button type="button" class="btn-quick-preset" data-vol="40">40%</button>
+              <button type="button" class="btn-quick-preset active" data-vol="80">80%</button>
+              <button type="button" class="btn-quick-preset" data-vol="100">100%</button>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -168,6 +190,32 @@
       </div>
 
       <div class="drawer-body">
+        <!-- Ustawienia głośności dźwięków i integracji Spotify -->
+        <div class="drawer-section sound-settings-section">
+          <div class="drawer-section-header">
+            <span class="drawer-section-title">GŁOŚNOŚĆ DŹWIĘKÓW (ODLICZANIE)</span>
+            <span class="drawer-section-count" id="drawer-volume-badge">80%</span>
+          </div>
+          <div class="drawer-volume-card">
+            <div class="drawer-volume-slider-row">
+              <span class="vol-slider-icon">🔈</span>
+              <input type="range" id="drawer-volume-slider" min="0" max="100" value="80" step="5" class="volume-range-input drawer-slider" aria-label="Głośność dźwięków w menu">
+              <span class="vol-slider-icon">🔊</span>
+            </div>
+            <div class="drawer-volume-presets">
+              <button type="button" class="btn-vol-preset" data-vol="30">30%</button>
+              <button type="button" class="btn-vol-preset" data-vol="60">60%</button>
+              <button type="button" class="btn-vol-preset active" data-vol="80">80%</button>
+              <button type="button" class="btn-vol-preset" data-vol="100">100%</button>
+              <button type="button" id="btn-drawer-test-sound" class="btn-vol-test">Testuj dźwięk</button>
+            </div>
+            <div class="drawer-audio-notice">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+              <span>Dostosowano do słuchania muzyki ze Spotify na telefonie – dźwięki odliczania miksują się z tłem bez zatrzymywania muzyki.</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Wybór sesji w menu hamburgera -->
         <div class="drawer-section">
           <div class="drawer-section-header">
