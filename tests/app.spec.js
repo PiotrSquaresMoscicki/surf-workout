@@ -162,90 +162,29 @@ test.describe('Surf Workout UI & Timer Tests', () => {
     await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 3');
   });
 
-  test('powinien obsługiwać zmianę głośności, presety oraz synchronizację UI i localStorage', async ({ page }) => {
-    // Domyślna głośność 80%
-    await expect(page.locator('#top-volume-val')).toHaveText('80%');
-
-    // Otwarcie drawera
+  test('powinien obsługiwać zmianę głośności suwakiem oraz presetami w menu drawer', async ({ page }) => {
+    // Otwarcie menu hamburgera
     await page.locator('#btn-open-list').click();
-    await expect(page.locator('#drawer-volume-badge')).toHaveText('80%');
-
-    // Kliknięcie presetu 100%
-    const preset100 = page.locator('.btn-vol-preset[data-vol="100"]');
-    await preset100.click();
-
-    // Sprawdzenie stanu obiektu audio i zapisu w localStorage
-    const vol = await page.evaluate(() => window.workoutAudio.volume);
-    expect(vol).toBe(1);
-    const savedVol = await page.evaluate(() => localStorage.getItem('surf_workout_volume'));
-    expect(savedVol).toBe('1.00');
-
-    // Sprawdzenie etykiet UI
-    await expect(page.locator('#top-volume-val')).toHaveText('100%');
     await expect(page.locator('#drawer-volume-badge')).toHaveText('100%');
 
-    // Zmiana suwakiem na 40%
-    const slider = page.locator('#drawer-volume-slider');
-    await slider.fill('40');
+    // Kliknięcie presetu 60%
+    const preset60 = page.locator('.btn-preset[data-val="60"]');
+    await preset60.click();
+
+    // Weryfikacja wartości w obiekcie audio, badge i localStorage
+    const vol60 = await page.evaluate(() => window.workoutAudio.volume);
+    expect(vol60).toBe(0.6);
+    await expect(page.locator('#drawer-volume-badge')).toHaveText('60%');
+    const savedVol = await page.evaluate(() => localStorage.getItem('surf_workout_volume'));
+    expect(savedVol).toBe('0.60');
+
+    // Zmiana suwakiem na 30%
+    const slider = page.locator('#volume-slider');
+    await slider.fill('30');
     await slider.dispatchEvent('input');
 
-    const vol40 = await page.evaluate(() => window.workoutAudio.volume);
-    expect(vol40).toBe(0.4);
-    await expect(page.locator('#top-volume-val')).toHaveText('40%');
-    await expect(page.locator('#drawer-volume-badge')).toHaveText('40%');
-  });
-
-  test('powinien otwierać i zamykać podręczny popover głośności na górnym pasku', async ({ page }) => {
-    const popover = page.locator('#quick-volume-popover');
-    const badgeBtn = page.locator('#btn-volume-toggle');
-
-    await expect(popover).toHaveClass(/hidden/);
-
-    // Kliknięcie plakietki głośności otwiera popover
-    await badgeBtn.click();
-    await expect(popover).not.toHaveClass(/hidden/);
-
-    // Wybór presetu w popoverze (40%)
-    const quickPreset40 = page.locator('.btn-quick-preset[data-vol="40"]');
-    await quickPreset40.click();
-
-    const vol = await page.evaluate(() => window.workoutAudio.volume);
-    expect(vol).toBe(0.4);
-    await expect(page.locator('#quick-volume-val')).toHaveText('40%');
-
-    // Kliknięcie poza popoverem zamyka go
-    await page.locator('#display-card').click();
-    await expect(popover).toHaveClass(/hidden/);
-  });
-
-  test('powinien obsługiwać przełączanie trybu audio między głośnym (bypass) a miksowaniem ze Spotify', async ({ page }) => {
-    // Domyślny tryb to bypass (playback)
-    const initialMode = await page.evaluate(() => window.workoutAudio.audioMode);
-    expect(initialMode).toBe('bypass');
-
-    // Otwarcie drawera
-    await page.locator('#btn-open-list').click();
-    const spotifyBtn = page.locator('.btn-audio-mode-toggle[data-mode="spotify"]');
-    await spotifyBtn.click();
-
-    // Weryfikacja zmiany trybu na spotify (ambient)
-    const newMode = await page.evaluate(() => window.workoutAudio.audioMode);
-    expect(newMode).toBe('spotify');
-    const savedMode = await page.evaluate(() => localStorage.getItem('surf_workout_audio_mode'));
-    expect(savedMode).toBe('spotify');
-
-    const isAmbient = await page.evaluate(() => {
-      if ('audioSession' in navigator) {
-        return navigator.audioSession.type === 'ambient';
-      }
-      return true;
-    });
-    expect(isAmbient).toBe(true);
-
-    // Przełączenie z powrotem na tryb bypass
-    const bypassBtn = page.locator('.btn-audio-mode-toggle[data-mode="bypass"]');
-    await bypassBtn.click();
-    const finalMode = await page.evaluate(() => window.workoutAudio.audioMode);
-    expect(finalMode).toBe('bypass');
+    const vol30 = await page.evaluate(() => window.workoutAudio.volume);
+    expect(vol30).toBe(0.3);
+    await expect(page.locator('#drawer-volume-badge')).toHaveText('30%');
   });
 });

@@ -69,14 +69,6 @@ export class SurfWorkoutApp {
       btnSound: document.getElementById('btn-sound'),
       iconSoundOn: document.getElementById('icon-sound-on'),
       iconSoundOff: document.getElementById('icon-sound-off'),
-      btnVolumeToggle: document.getElementById('btn-volume-toggle'),
-      topVolumeVal: document.getElementById('top-volume-val'),
-      quickVolumePopover: document.getElementById('quick-volume-popover'),
-      quickVolumeVal: document.getElementById('quick-volume-val'),
-      quickVolumeSlider: document.getElementById('quick-volume-slider'),
-      drawerVolumeBadge: document.getElementById('drawer-volume-badge'),
-      drawerVolumeSlider: document.getElementById('drawer-volume-slider'),
-      btnDrawerTestSound: document.getElementById('btn-drawer-test-sound'),
       btnOpenList: document.getElementById('btn-open-list'),
       btnCloseDrawer: document.getElementById('btn-close-drawer'),
       drawerBackdrop: document.getElementById('drawer-backdrop'),
@@ -86,7 +78,10 @@ export class SurfWorkoutApp {
       drawerSessionExCount: document.getElementById('drawer-session-ex-count'),
       drawerExerciseList: document.getElementById('drawer-exercise-list'),
       btnRestartWorkout: document.getElementById('btn-restart-workout'),
-      appVersion: document.getElementById('app-version')
+      appVersion: document.getElementById('app-version'),
+      volumeSlider: document.getElementById('volume-slider'),
+      drawerVolumeBadge: document.getElementById('drawer-volume-badge'),
+      btnTestSound: document.getElementById('btn-test-sound')
     };
 
     this.init();
@@ -100,12 +95,37 @@ export class SurfWorkoutApp {
   init() {
     this.updateAppVersion();
     this.bindEvents();
+    this.updateVolumeUI();
     this.updateSessionHeader();
     this.renderDrawerSessions();
     this.renderDrawerExercises();
     this.loadExercise(0, 0);
     this.requestWakeLock();
-    this.updateVolumeUI();
+  }
+
+  updateVolumeUI() {
+    if (!window.workoutAudio) return;
+    const volPct = window.workoutAudio.getVolumePercent();
+    const isMuted = window.workoutAudio.isMuted;
+
+    if (this.dom.volumeSlider) {
+      this.dom.volumeSlider.value = volPct;
+    }
+    if (this.dom.drawerVolumeBadge) {
+      this.dom.drawerVolumeBadge.textContent = isMuted ? 'WYCISZONY' : `${volPct}%`;
+    }
+
+    // Aktualizacja aktywnych przycisków presetów
+    document.querySelectorAll('.btn-preset').forEach(btn => {
+      const pVal = parseInt(btn.dataset.val, 10);
+      btn.classList.toggle('active', !isMuted && pVal === volPct);
+    });
+
+    // Ikona dźwięku na górnym pasku
+    if (this.dom.iconSoundOn && this.dom.iconSoundOff) {
+      this.dom.iconSoundOn.classList.toggle('hidden', isMuted);
+      this.dom.iconSoundOff.classList.toggle('hidden', !isMuted);
+    }
   }
 
   updateAppVersion() {
@@ -191,82 +211,37 @@ export class SurfWorkoutApp {
       this.updateVolumeUI();
     });
 
-    if (this.dom.btnVolumeToggle) {
-      this.dom.btnVolumeToggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleQuickVolumePopover();
-      });
-    }
-
-    if (this.dom.quickVolumeSlider) {
-      this.dom.quickVolumeSlider.addEventListener('input', (e) => {
-        window.workoutAudio.unlock();
+    // Obsługa suwaka głośności w drawerze
+    if (this.dom.volumeSlider) {
+      this.dom.volumeSlider.addEventListener('input', (e) => {
         const val = parseInt(e.target.value, 10);
         window.workoutAudio.setVolume(val / 100);
         this.updateVolumeUI();
       });
-      this.dom.quickVolumeSlider.addEventListener('change', () => {
-        window.workoutAudio.unlock();
+
+      this.dom.volumeSlider.addEventListener('change', () => {
         window.workoutAudio.playTick(1);
       });
     }
 
-    if (this.dom.drawerVolumeSlider) {
-      this.dom.drawerVolumeSlider.addEventListener('input', (e) => {
-        window.workoutAudio.unlock();
-        const val = parseInt(e.target.value, 10);
-        window.workoutAudio.setVolume(val / 100);
-        this.updateVolumeUI();
-      });
-      this.dom.drawerVolumeSlider.addEventListener('change', () => {
-        window.workoutAudio.unlock();
-        window.workoutAudio.playTick(1);
-      });
-    }
-
-    // Presety głośności
-    document.querySelectorAll('.btn-quick-preset, .btn-vol-preset').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        window.workoutAudio.unlock();
-        const pVol = parseInt(btn.dataset.vol, 10);
-        if (!isNaN(pVol)) {
-          window.workoutAudio.setVolume(pVol / 100);
+    // Obsługa presetów głośności
+    document.querySelectorAll('.btn-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = parseInt(btn.dataset.val, 10);
+        if (!isNaN(val)) {
+          window.workoutAudio.setVolume(val / 100);
           this.updateVolumeUI();
           window.workoutAudio.playTick(1);
         }
       });
     });
 
-    // Przełączanie trybu audio (Bypass vs Spotify)
-    document.querySelectorAll('.btn-audio-mode, .btn-audio-mode-toggle').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        window.workoutAudio.unlock();
-        const mode = btn.dataset.mode;
-        if (mode) {
-          window.workoutAudio.setAudioMode(mode);
-          this.updateVolumeUI();
-          window.workoutAudio.playTick(1);
-        }
-      });
-    });
-
-    if (this.dom.btnDrawerTestSound) {
-      this.dom.btnDrawerTestSound.addEventListener('click', () => {
-        window.workoutAudio.unlock();
+    // Przycisk testu dźwięku
+    if (this.dom.btnTestSound) {
+      this.dom.btnTestSound.addEventListener('click', () => {
         window.workoutAudio.playTestSound();
       });
     }
-
-    // Zamknięcie podręcznego popoveru przy kliknięciu poza nim
-    document.addEventListener('click', (e) => {
-      if (this.dom.quickVolumePopover && !this.dom.quickVolumePopover.classList.contains('hidden')) {
-        if (!this.dom.quickVolumePopover.contains(e.target) && (!this.dom.btnVolumeToggle || !this.dom.btnVolumeToggle.contains(e.target))) {
-          this.closeQuickVolumePopover();
-        }
-      }
-    });
 
     // Otwarcie hamburger menu (drawer po lewej stronie)
     this.dom.btnOpenList.addEventListener('click', () => {
@@ -795,57 +770,6 @@ export class SurfWorkoutApp {
           badgeContainer.innerHTML = isCurrent ? '<span class="badge-active">AKTYWNA</span>' : '<span class="badge-select">WYBIERZ</span>';
         }
       });
-    }
-  }
-
-  updateVolumeUI() {
-    const isMuted = window.workoutAudio.isMuted;
-    const volPct = window.workoutAudio.getVolumePercent();
-
-    if (this.dom.iconSoundOn) this.dom.iconSoundOn.classList.toggle('hidden', isMuted);
-    if (this.dom.iconSoundOff) this.dom.iconSoundOff.classList.toggle('hidden', !isMuted);
-
-    const displayTxt = isMuted ? 'MUTE' : `${volPct}%`;
-    if (this.dom.topVolumeVal) this.dom.topVolumeVal.textContent = displayTxt;
-    if (this.dom.quickVolumeVal) this.dom.quickVolumeVal.textContent = `${volPct}%`;
-    if (this.dom.drawerVolumeBadge) this.dom.drawerVolumeBadge.textContent = isMuted ? 'WYCISZONY' : `${volPct}%`;
-
-    if (this.dom.quickVolumeSlider) {
-      this.dom.quickVolumeSlider.value = isMuted ? 0 : volPct;
-    }
-    if (this.dom.drawerVolumeSlider) {
-      this.dom.drawerVolumeSlider.value = isMuted ? 0 : volPct;
-    }
-
-    document.querySelectorAll('.btn-quick-preset').forEach(btn => {
-      const pVol = parseInt(btn.dataset.vol, 10);
-      btn.classList.toggle('active', !isMuted && pVol === volPct);
-    });
-
-    document.querySelectorAll('.btn-vol-preset').forEach(btn => {
-      const pVol = parseInt(btn.dataset.vol, 10);
-      btn.classList.toggle('active', !isMuted && pVol === volPct);
-    });
-
-    const activeMode = window.workoutAudio.audioMode;
-    document.querySelectorAll('.btn-audio-mode, .btn-audio-mode-toggle').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.mode === activeMode);
-    });
-  }
-
-  toggleQuickVolumePopover() {
-    if (!this.dom.quickVolumePopover) return;
-    const isHidden = this.dom.quickVolumePopover.classList.contains('hidden');
-    if (isHidden) {
-      this.dom.quickVolumePopover.classList.remove('hidden');
-    } else {
-      this.dom.quickVolumePopover.classList.add('hidden');
-    }
-  }
-
-  closeQuickVolumePopover() {
-    if (this.dom.quickVolumePopover) {
-      this.dom.quickVolumePopover.classList.add('hidden');
     }
   }
 

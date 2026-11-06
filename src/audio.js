@@ -1,41 +1,24 @@
 // Moduł audio bazujący na Web Audio API z pełnym wsparciem dla iOS Safari (w tym iPhone Silent Mode bypass)
-// oraz trybem współbieżności ze Spotify (Ambient Mix)
 
 export class WorkoutAudio {
   constructor() {
     this.ctx = null;
-    this.masterGainNode = null;
-    this.isMuted = localStorage.getItem('surf_workout_muted') === 'true';
-
-    // Tryb audio:
-    // 'bypass' - domyślny, kategoria 'playback' + HTML5 media unlock (omija sprzętowy przełącznik Silent Mode na iPhonie)
-    // 'spotify' - kategoria 'ambient', miksuje się ze Spotify bez pauzowania muzyki (wymaga wyłączonego wyciszenia na iPhonie lub słuchawek)
-    this.audioMode = localStorage.getItem('surf_workout_audio_mode') || 'bypass';
-
-    // Domyślna głośność: 0.8 (80%), zakres 0.0 - 1.0
-    const savedVol = localStorage.getItem('surf_workout_volume');
-    const parsed = savedVol !== null ? parseFloat(savedVol) : 0.8;
-    this.volume = (!isNaN(parsed) && parsed >= 0 && parsed <= 1) ? parsed : 0.8;
-
+    this.isMuted = false;
     this.isUnlocked = false;
+
+    // Głośność 0.0 - 1.0 (domyślnie 1.0 = 100% z podbitym poziomem)
+    const savedVol = localStorage.getItem('surf_workout_volume');
+    const parsed = savedVol !== null ? parseFloat(savedVol) : 1.0;
+    this.volume = (!isNaN(parsed) && parsed >= 0 && parsed <= 1) ? parsed : 1.0;
+
     this.setupAudioSession();
   }
 
-  setAudioMode(mode) {
-    if (mode !== 'bypass' && mode !== 'spotify') return;
-    this.audioMode = mode;
-    localStorage.setItem('surf_workout_audio_mode', mode);
-    this.setupAudioSession();
-    if (mode === 'bypass') {
-      this.forceMediaPlaybackUnlock();
-    }
-    return this.audioMode;
-  }
-
+  // Wymuszenie kategorii 'playback' na iOS Safari (omija sprzętowy przełącznik wyciszenia / Silent Mode)
   setupAudioSession() {
     if ('audioSession' in navigator) {
       try {
-        navigator.audioSession.type = this.audioMode === 'spotify' ? 'ambient' : 'playback';
+        navigator.audioSession.type = 'playback';
       } catch (e) {
         console.warn('audioSession error:', e);
       }
@@ -52,50 +35,35 @@ export class WorkoutAudio {
       }
     }
 
-    if (this.ctx) {
-      if (!this.masterGainNode) {
-        this.masterGainNode = this.ctx.createGain();
-        this.applyVolume();
-        this.masterGainNode.connect(this.ctx.destination);
-      }
-
-      if (this.ctx.state === 'suspended') {
-        this.ctx.resume().catch(() => {});
-      }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
     }
   }
 
-  // Wymuszenie odblokowania kanału playback na iOS (omija sprzętowy przełącznik wyciszenia)
-  forceMediaPlaybackUnlock() {
+  // Odblokowanie kontekstu audio na iOS przy pierwszej interakcji użytkownika
+  unlock() {
+    this.init();
+    if (!this.ctx || this.isUnlocked) return;
+
     try {
+      // 1. Wznowienie kontekstu
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+
+      // 2. Odtworzenie bufora 1-próbkowego (wymagane przez WebKit na iOS)
+      const buffer = this.ctx.createBuffer(1, 1, 22050);
+      const source = this.ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.ctx.destination);
+      source.start(0);
+
+      // 3. Cichy dźwięk HTML5 wymuszający sesję multimedialną (playback channel na iOS)
       const dummyAudio = document.createElement('audio');
       dummyAudio.setAttribute('playsinline', '');
       dummyAudio.setAttribute('x-webkit-airplay', 'deny');
       dummyAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
       dummyAudio.play().catch(() => {});
-    } catch (_) {}
-  }
-
-  // Odblokowanie kontekstu audio na urządzeniach mobilnych przy geście użytkownika
-  unlock() {
-    this.init();
-    if (!this.ctx) return;
-
-    try {
-      if (this.ctx.state === 'suspended') {
-        this.ctx.resume().catch(() => {});
-      }
-
-      // Odtworzenie bufora 1-próbkowego (wymagane przez WebKit na iOS)
-      const buffer = this.ctx.createBuffer(1, 1, 22050);
-      const source = this.ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(this.masterGainNode || this.ctx.destination);
-      source.start(0);
-
-      if (this.audioMode === 'bypass') {
-        this.forceMediaPlaybackUnlock();
-      }
 
       this.isUnlocked = true;
     } catch (e) {
@@ -103,32 +71,13 @@ export class WorkoutAudio {
     }
   }
 
-  applyVolume() {
-    if (!this.masterGainNode || !this.ctx) return;
-    const effectiveGain = this.isMuted ? 0 : this.volume;
-    try {
-      const t = this.ctx.currentTime;
-      this.masterGainNode.gain.cancelScheduledValues(t);
-      this.masterGainNode.gain.setValueAtTime(effectiveGain, t);
-    } catch (_) {}
-    this.masterGainNode.gain.value = effectiveGain;
-  }
-
-  // Ustawienie głośności (wartość 0.0 - 1.0)
   setVolume(newVolume) {
     const val = typeof newVolume === 'number' ? newVolume : parseFloat(newVolume);
-    const clamped = isNaN(val) ? 0.8 : Math.max(0, Math.min(1, val));
-    this.volume = clamped;
+    this.volume = isNaN(val) ? 1.0 : Math.max(0, Math.min(1, val));
     localStorage.setItem('surf_workout_volume', this.volume.toFixed(2));
-
-    // Jeśli użytkownik zmienia głośność powyżej 0, a aplikacja była wyciszona, zdejmij wyciszenie
     if (this.isMuted && this.volume > 0) {
       this.isMuted = false;
-      localStorage.setItem('surf_workout_muted', 'false');
     }
-
-    this.init();
-    this.applyVolume();
     return this.volume;
   }
 
@@ -138,35 +87,26 @@ export class WorkoutAudio {
 
   toggleMute() {
     this.isMuted = !this.isMuted;
-    localStorage.setItem('surf_workout_muted', String(this.isMuted));
-    this.init();
-    this.applyVolume();
     if (!this.isMuted) {
+      this.init();
       this.playTick(1); // dźwiękowa informacja o włączeniu dźwięku
     }
     return this.isMuted;
   }
 
-  getDestination() {
-    this.init();
-    return this.masterGainNode || (this.ctx ? this.ctx.destination : null);
-  }
-
-  // Spokojny, organiczny, ale czytelny i wyrazisty tik odliczania (10s do 1s)
+  // Spokojny, organiczny tik odliczania (10s do 1s)
   playTick(secondsRemaining = 10) {
     if (this.isMuted) return;
-    this.unlock();
+    this.init();
     if (!this.ctx) return;
 
     try {
-      const dest = this.getDestination();
-      if (!dest) return;
-
       const t = this.ctx.currentTime;
       const isFinal = secondsRemaining <= 3 && secondsRemaining >= 1;
-      const freq = isFinal ? 880 : 680;
-      const baseGain = isFinal ? 0.85 : 0.60;
-      const duration = isFinal ? 0.07 : 0.05;
+      const freq = isFinal ? 620 : 480;
+      const baseVol = isFinal ? 0.35 : 0.22;
+      const volume = baseVol * this.volume * 2.5;
+      const duration = isFinal ? 0.08 : 0.05;
 
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -176,14 +116,14 @@ export class WorkoutAudio {
       osc.frequency.setValueAtTime(freq, t);
 
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(isFinal ? 3200 : 2400, t);
+      filter.frequency.setValueAtTime(1400, t);
 
-      gain.gain.setValueAtTime(baseGain, t);
+      gain.gain.setValueAtTime(volume, t);
       gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
 
       osc.connect(filter);
       filter.connect(gain);
-      gain.connect(dest);
+      gain.connect(this.ctx.destination);
 
       osc.start(t);
       osc.stop(t + duration + 0.02);
@@ -192,21 +132,18 @@ export class WorkoutAudio {
     }
   }
 
-  // Ciepły, promienny dzwonek startu serii (akord F5 + A5 + C6)
+  // Spokojny, ciepły dzwonek startu serii (akord dzwonkowy F5 + C6)
   playStart() {
     if (this.isMuted) return;
-    this.unlock();
+    this.init();
     if (!this.ctx) return;
 
     try {
-      const dest = this.getDestination();
-      if (!dest) return;
-
       const t = this.ctx.currentTime;
+      const mult = this.volume * 2.2;
       const notes = [
-        { freq: 698.46, gain: 0.65, decay: 0.85, filterFreq: 3000 }, // F5
-        { freq: 880.00, gain: 0.45, decay: 0.70, filterFreq: 3200 }, // A5
-        { freq: 1046.50, gain: 0.50, decay: 0.60, filterFreq: 3500 } // C6
+        { freq: 698.46, gain: 0.32 * mult, decay: 0.75 },
+        { freq: 1046.5, gain: 0.18 * mult, decay: 0.55 }
       ];
 
       notes.forEach(n => {
@@ -218,14 +155,14 @@ export class WorkoutAudio {
         osc.frequency.setValueAtTime(n.freq, t);
 
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(n.filterFreq, t);
+        filter.frequency.setValueAtTime(2200, t);
 
         gain.gain.setValueAtTime(n.gain, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + n.decay);
 
         osc.connect(filter);
         filter.connect(gain);
-        gain.connect(dest);
+        gain.connect(this.ctx.destination);
 
         osc.start(t);
         osc.stop(t + n.decay + 0.03);
@@ -235,22 +172,19 @@ export class WorkoutAudio {
     }
   }
 
-  // Dźwięk końca serii / gong relaksacyjny (misa tybetańska z pełnym ciałem harmonicznym)
+  // Dźwięk końca serii / gong relaksacyjny (niski gong / misa tybetańska)
   playEndGong() {
     if (this.isMuted) return;
-    this.unlock();
+    this.init();
     if (!this.ctx) return;
 
     try {
-      const dest = this.getDestination();
-      if (!dest) return;
-
       const t = this.ctx.currentTime;
+      const mult = this.volume * 2.0;
       const partials = [
-        { freq: 220, gain: 0.70, decay: 1.8 },
-        { freq: 440, gain: 0.40, decay: 1.4 },
-        { freq: 660, gain: 0.20, decay: 1.0 },
-        { freq: 880, gain: 0.12, decay: 0.7 }
+        { freq: 220, gain: 0.40 * mult, decay: 1.5 },
+        { freq: 440, gain: 0.20 * mult, decay: 1.1 },
+        { freq: 660, gain: 0.08 * mult, decay: 0.7 }
       ];
 
       partials.forEach(p => {
@@ -262,14 +196,14 @@ export class WorkoutAudio {
         osc.frequency.setValueAtTime(p.freq, t);
 
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(1600, t);
+        filter.frequency.setValueAtTime(1100, t);
 
         gain.gain.setValueAtTime(p.gain, t);
         gain.gain.exponentialRampToValueAtTime(0.001, t + p.decay);
 
         osc.connect(filter);
         filter.connect(gain);
-        gain.connect(dest);
+        gain.connect(this.ctx.destination);
 
         osc.start(t);
         osc.stop(t + p.decay + 0.05);
@@ -279,63 +213,50 @@ export class WorkoutAudio {
     }
   }
 
-  // Spokojny ton wejścia w przerwę (łagodny dwuton C5 -> A4)
+  // Spokojny ton wejścia w przerwę (wyciszenie A4 440 Hz)
   playRest() {
     if (this.isMuted) return;
-    this.unlock();
+    this.init();
     if (!this.ctx) return;
 
     try {
-      const dest = this.getDestination();
-      if (!dest) return;
-
       const t = this.ctx.currentTime;
-      const notes = [
-        { freq: 523.25, offset: 0, decay: 0.45, gain: 0.50 },
-        { freq: 440.00, offset: 0.12, decay: 0.60, gain: 0.55 }
-      ];
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
 
-      notes.forEach(n => {
-        const startTime = t + n.offset;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        const filter = this.ctx.createBiquadFilter();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, t);
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(n.freq, startTime);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1000, t);
 
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(1400, startTime);
+      gain.gain.setValueAtTime(0.25 * this.volume * 2.2, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
 
-        gain.gain.setValueAtTime(n.gain, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + n.decay);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
 
-        osc.connect(filter);
-        filter.connect(gain);
-        gain.connect(dest);
-
-        osc.start(startTime);
-        osc.stop(startTime + n.decay + 0.03);
-      });
+      osc.start(t);
+      osc.stop(t + 0.5);
     } catch (e) {
       console.warn('playRest error:', e);
     }
   }
 
-  // Dźwięk zakończenia czasu przerwy (dwustopniowy dzwonek D5 -> A5)
+  // Dźwięk zakończenia czasu przerwy (dwustopniowy spokojny dzwonek D5 -> A5)
   playRestEnd() {
     if (this.isMuted) return;
-    this.unlock();
+    this.init();
     if (!this.ctx) return;
 
     try {
-      const dest = this.getDestination();
-      if (!dest) return;
-
       const t = this.ctx.currentTime;
+      const mult = this.volume * 2.2;
       const notes = [
-        { freq: 587.33, offset: 0, decay: 0.40, gain: 0.60 },
-        { freq: 880.00, offset: 0.15, decay: 0.65, gain: 0.70 }
+        { freq: 587.33, offset: 0, decay: 0.40, gain: 0.28 * mult },
+        { freq: 880.00, offset: 0.16, decay: 0.55, gain: 0.32 * mult }
       ];
 
       notes.forEach(n => {
@@ -348,14 +269,14 @@ export class WorkoutAudio {
         osc.frequency.setValueAtTime(n.freq, startTime);
 
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(2400, startTime);
+        filter.frequency.setValueAtTime(2000, startTime);
 
         gain.gain.setValueAtTime(n.gain, startTime);
         gain.gain.exponentialRampToValueAtTime(0.001, startTime + n.decay);
 
         osc.connect(filter);
         filter.connect(gain);
-        gain.connect(dest);
+        gain.connect(this.ctx.destination);
 
         osc.start(startTime);
         osc.stop(startTime + n.decay + 0.03);
@@ -365,33 +286,30 @@ export class WorkoutAudio {
     }
   }
 
-  // Subtelne kliknięcie interfejsu
+  // Bardzo subtelne kliknięcie interfejsu
   playClick() {
     if (this.isMuted) return;
-    this.unlock();
+    this.init();
     if (!this.ctx) return;
 
     try {
-      const dest = this.getDestination();
-      if (!dest) return;
-
       const t = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       const filter = this.ctx.createBiquadFilter();
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(360, t);
+      osc.frequency.setValueAtTime(320, t);
 
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(900, t);
+      filter.frequency.setValueAtTime(700, t);
 
-      gain.gain.setValueAtTime(0.25, t);
+      gain.gain.setValueAtTime(0.12 * this.volume * 2.0, t);
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
 
       osc.connect(filter);
       filter.connect(gain);
-      gain.connect(dest);
+      gain.connect(this.ctx.destination);
 
       osc.start(t);
       osc.stop(t + 0.05);
@@ -400,9 +318,9 @@ export class WorkoutAudio {
     }
   }
 
-  // Dźwięk testowy dla użytkownika do szybkiego sprawdzenia głośności
+  // Dźwięk testowy do sprawdzenia głośności
   playTestSound() {
-    this.unlock();
+    this.init();
     this.playTick(1);
     setTimeout(() => {
       this.playStart();
