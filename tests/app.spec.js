@@ -162,29 +162,29 @@ test.describe('Surf Workout UI & Timer Tests', () => {
     await expect(page.locator('#sets-counter-text')).toHaveText('SERIA 1 Z 3');
   });
 
-  test('powinien obsługiwać zmianę głośności suwakiem oraz presetami w menu drawer (do 300%)', async ({ page }) => {
+  test('powinien obsługiwać zmianę głośności suwakiem oraz presetami w menu drawer (do 900%)', async ({ page }) => {
     // Otwarcie menu hamburgera
     await page.locator('#btn-open-list').click();
     await expect(page.locator('#drawer-volume-badge')).toHaveText('100%');
 
-    // Kliknięcie presetu 200%
-    const preset200 = page.locator('.btn-preset[data-val="200"]');
-    await preset200.click();
+    // Kliknięcie presetu 300%
+    const preset300 = page.locator('.btn-preset[data-val="300"]');
+    await preset300.click();
 
     // Weryfikacja wartości w obiekcie audio, badge i localStorage
-    const vol200 = await page.evaluate(() => window.workoutAudio.volume);
-    expect(vol200).toBe(2.0);
-    await expect(page.locator('#drawer-volume-badge')).toHaveText('200%');
-    const savedVol = await page.evaluate(() => localStorage.getItem('surf_workout_volume'));
-    expect(savedVol).toBe('2.00');
-
-    // Zmiana suwakiem na 300%
-    const slider = page.locator('#volume-slider');
-    await slider.fill('300');
-    await slider.dispatchEvent('input');
-
     const vol300 = await page.evaluate(() => window.workoutAudio.volume);
     expect(vol300).toBe(3.0);
     await expect(page.locator('#drawer-volume-badge')).toHaveText('300%');
+    const savedVol = await page.evaluate(() => localStorage.getItem('surf_workout_volume'));
+    expect(savedVol).toBe('3.00');
+
+    // Zmiana suwakiem na 900%
+    const slider = page.locator('#volume-slider');
+    await slider.fill('900');
+    await slider.dispatchEvent('input');
+
+    const vol900 = await page.evaluate(() => window.workoutAudio.volume);
+    expect(vol900).toBe(9.0);
+    await expect(page.locator('#drawer-volume-badge')).toHaveText('900%');
   });
 });

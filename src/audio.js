@@ -6,10 +6,10 @@ export class WorkoutAudio {
     this.isMuted = false;
     this.isUnlocked = false;
 
-    // Głośność 0.0 - 3.0 (suwak w UI: 0% - 300%, domyślnie 1.0 = 100%, maks 3.0 = 300%)
+    // Głośność 0.0 - 9.0 (suwak w UI: 0% - 900%, domyślnie 1.0 = 100%, maks 9.0 = 900%)
     const savedVol = localStorage.getItem('surf_workout_volume');
     const parsed = savedVol !== null ? parseFloat(savedVol) : 1.0;
-    this.volume = (!isNaN(parsed) && parsed >= 0 && parsed <= 3.0) ? parsed : 1.0;
+    this.volume = (!isNaN(parsed) && parsed >= 0 && parsed <= 9.0) ? parsed : 1.0;
 
     this.setupAudioSession();
   }
@@ -73,7 +73,7 @@ export class WorkoutAudio {
 
   setVolume(newVolume) {
     const val = typeof newVolume === 'number' ? newVolume : parseFloat(newVolume);
-    this.volume = isNaN(val) ? 1.0 : Math.max(0, Math.min(3.0, val));
+    this.volume = isNaN(val) ? 1.0 : Math.max(0, Math.min(9.0, val));
     localStorage.setItem('surf_workout_volume', this.volume.toFixed(2));
     if (this.isMuted && this.volume > 0) {
       this.isMuted = false;
